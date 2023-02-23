@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+            integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l"
+            crossorigin="anonymous">
+
+			  <!-- JS -->
+        <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"
+            integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+            crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+            integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+            crossorigin="anonymous"></script>
+
+        <!-- 구글폰트 -->
+        <link href="https://fonts.googleapis.com/css?family=Stylish&display=swap" rel="stylesheet">
+
+
+        <title>SW사관학교 정글 | 나홀로 메모장</title>
+
+        <!-- style -->
+        <style type="text/css">
+            * {
+                font-family: Georgia, "Malgun Gothic", serif;
+            }
+
+            .wrap {
+                width: 900px;
+                margin: auto;
+            }
+
+            .comment {
+                color: blue;
+                font-weight: bold;
+            }
+
+            #post-box {
+                width: 500px;
+                margin: 20px auto;
+                padding: 50px;
+                border: black solid;
+                border-radius: 5px;
+            }
+
+
+
+        </style>
+        <script>
+            $(document).ready(function () {
+                showMemo();
+            });
+            
+
+
+            function postMemo() {
+                let title = $("#input-title").val();
+                let text = $("#input-text").val();
+                
+
+                $.ajax({
+                    type: "POST",
+                    url: "/memo",
+                    data: {title_give : title, text_give : text },
+                    success: function (response) { 
+                        if (response["result"] == "success") {
+                            alert("성공!");
+                            showMemo();
+                        } 
+                    }
+                });
+            }
+
+
+
+            function delMemo(memo_id) {
+
+                $.ajax({
+                    type: "POST",
+                    url: "/memo/del",
+                    data: {del_id : memo_id},
+                    success: function (response) { 
+                        if (response["result"] == "success") {
+                            alert("삭제완료");
+                            showMemo();
+                        } 
+                    }
+                });
+            }
+
+
+
+            function showMemo() {
+                $("#card-list").empty()
+                $.ajax({
+                    type: "GET",
+                    url: "/memo",
+                    data: {},
+                    success: function (response) {
+                        let memos = response["memos"];
+                        console.log(memos);
+                        for (let i = 0; i < memos.length; i++) {
+                            makeCard(memos[i]["title"], memos[i]["text"], memos[i]["like"], memos[i]["memo_id"])
+                        }
+                    }
+                });
+            }
+
+            
+
+            function makeCard(title,text,like,memo_id) {
+                let temp_html= `<div class="card" style="width: 18rem;" id="${memo_id}">
+                                    <div class="card-body">
+                                        <h1 id="card-title">${title}</h1>
+                                        <h4 id="card-text">${text}</h4>
+                                        <p class="card-likes">좋아요:${like}</p>
+                                        <br>
+                                        <button id="card-edit" class="btn btn-primary" onclick="editCard('${title}','${text}','${memo_id}')">수정</button>
+                                        <button id="card-del" class="btn btn-danger" onclick="delMemo('${memo_id}')">삭제</button>
+                                        <button id="card-like" type="button" class="btn btn-link" onclick="likeMemo('${memo_id}')">좋아요👍</button>
+                                    </div>
+                                </div>`;
+                $("#card-list").append(temp_html)
+
+            }
+
+            function editCard(title,text,memo_id) {
+                $('#' + memo_id).empty()
+                let temp_Form = `<div class="card-body">
+                                    <div class="form-floating">
+                                        <textarea class="form-control new-title" id="edit_title">${title}</textarea>
+                                    </div>
+                                    <div class="form-floating">
+                                        <textarea class="form-control new-text" id="edit_text" style="height: 100px">${text}</textarea>
+                                    </div>
+                                </div>
+                                <div class="mybtns">
+                                    <button onclick="editMemo(${memo_id})" type="button" class="btn btn-outline-success"
+                                    style= "position: relative; left:20px; bottom:10px">저장</button>
+                                </div>`                                
+                $('#' + memo_id).append(temp_Form);
+            
+            }
+
+            function editMemo(memo_id) {
+
+                let title = $('#edit_title').val()
+                let text = $('#edit_text').val()
+
+                $.ajax({
+                    type: "POST",
+                    url: "/memo/edit",
+                    data: { id_give: memo_id, title_give: title, text_give: text },
+                    success: function (response) {
+                        if (response["result"] == "success") {
+                            alert("수정완료!");
+                            showMemo();
+                        } 
+                    }
+                })
+            }
+
+            function likeMemo(memo_id) {
+                $.ajax({
+                    type: "POST",
+                    url: "/memo/like",
+                    data: {'id_give': memo_id},
+                    success: function (response) {
+                        if (response["result"] == "success") {
+                            alert("좋아요!");
+                            showMemo();
+                        }
+                    }
+                });
+            }
+        </script>
+
+    </head>
+
+    <body>
+        <div class="wrap">
+            <div class="jumbotron">
+                <h1 class="display-5">나홀로메모장 <span class="badge badge-secondary">ver2.0</span></h1>
+                    <div class="form-group">
+                        <input id="input-title" class="form-control" placeholder="제목을 입력하세요" style= width:400px; >
+                    </div>
+                    <div class="form-group">
+                        <textarea id="input-text" class="form-control" rows="2" placeholder="내용을 입력하세요" style= width:400px;></textarea>
+                    </div>
+                
+                
+                    <button id="btn-post-box" type="submit" class="btn btn-primary" onclick="postMemo()">저장하기</button>
+                
+            </div>
+            <div id="card-list" class="card-columns">
+            </div>
+            
+        </div>
+    </body>
+
+</html>
